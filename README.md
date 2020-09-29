@@ -1,2 +1,2 @@
 # SimpleDictionary
-DictionaryWithGUIJava
+This code sucks
