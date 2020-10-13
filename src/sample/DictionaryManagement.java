@@ -153,7 +153,9 @@ public class DictionaryManagement extends Application {
                         }
                 }
                 observableList.clear();
-                observableList.addAll(youMeanList.subList(0, 15));
+                if (youMeanList.size() > 15) {
+                    observableList.addAll(youMeanList.subList(0, 15));
+                } else observableList.addAll(youMeanList);
             }
         }
     }
