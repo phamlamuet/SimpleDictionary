@@ -19,6 +19,12 @@ public class Word implements Comparable<Word> {
 
     }
 
+    public Word(String word, Meaning meaning, String phonetics) {
+        this.word = word;
+        this.meaning = meaning;
+        this.phonetics = phonetics;
+    }
+
     public String getWord() {
         return word;
     }
@@ -60,14 +66,12 @@ public class Word implements Comparable<Word> {
         if (this == o) return true;
         if (!(o instanceof Word)) return false;
         Word word1 = (Word) o;
-        return Objects.equals(getWord(), word1.getWord()) &&
-                Objects.equals(getMeaning(), word1.getMeaning()) &&
-                Objects.equals(getPhonetics(), word1.getPhonetics());
+        return Objects.equals(getWord(), word1.getWord());
     }
 
     @Override
     public int hashCode() {
-        return Soundex.soundex(this.word).hashCode();
+        return Objects.hash(getWord());
     }
 
     @Override

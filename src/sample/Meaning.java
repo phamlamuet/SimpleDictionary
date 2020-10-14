@@ -7,6 +7,10 @@ public class Meaning {
         this.meaning=new StringBuilder("");
     }
 
+    public Meaning(StringBuilder meaning) {
+        this.meaning = meaning;
+    }
+
     @Override
     public String toString() {
         return meaning+"";

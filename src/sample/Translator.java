@@ -14,10 +14,10 @@ public class Translator {
     public static void main(String[] args) throws IOException {
         String text = "Hello world!";
         //Translated text: Hallo Welt!
-        System.out.println("Translated text: " + translate("en", "de", text));
+        System.out.println("Translated text: " + translate("en", "vi", text));
     }
 
-    private static String translate(String langFrom, String langTo, String text) throws IOException {
+    public static String translate(String langFrom, String langTo, String text) throws IOException {
         // INSERT YOU URL HERE
         String urlStr = "https://script.google.com/macros/s/AKfycbw2qKkvobro8WLNZUKi2kGwGwEO4W8cBavcKqcuCIGhGBBtVts/exec" +
                 "?q=" + URLEncoder.encode(text, "UTF-8")

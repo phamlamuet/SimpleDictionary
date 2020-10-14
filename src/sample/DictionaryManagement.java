@@ -1,33 +1,30 @@
 package sample;
 
 import TrieUtil.Trie;
-import com.gtranslate.Audio;
-import com.gtranslate.Language;
+import UtilGUI.ConfirmationBox;
+import UtilGUI.MessageBox;
 import com.sun.speech.freetts.Voice;
 import com.sun.speech.freetts.VoiceManager;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 
-import java.time.Duration;
+import java.io.IOException;
 import java.util.*;
 
 
 public class DictionaryManagement extends Application {
+    Stage stageTemp;
     VBox mainPanel;
     TextField wordField;
     Button searchButton;
@@ -40,15 +37,17 @@ public class DictionaryManagement extends Application {
     Dictionary dictionary;
     VoiceManager vm;
     Voice voice;
+    Button ggTranslate;
 
     Button addAWord;
     Button deleteAWord;
 
-    int selecedIndex = 0;
-
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+
+        stageTemp=primaryStage;
+
         dictionary = new Dictionary();
         dictionary.loadFromFile();
         dictionary.sortWords();
@@ -57,7 +56,6 @@ public class DictionaryManagement extends Application {
         vm = VoiceManager.getInstance();
         voice = vm.getVoice("kevin16");
         voice.allocate();
-
 
         for (Word word : dictionary.getWords()) {
             trieSearch.insert(word.getWord());
@@ -71,7 +69,6 @@ public class DictionaryManagement extends Application {
 
         wordField.setOnKeyReleased(e -> textField_Go());
 
-
         searchButton = new Button("Go");
 
         searchButton.setOnAction(e -> btn_Go());
@@ -80,15 +77,26 @@ public class DictionaryManagement extends Application {
         speakButton.setText("Speak");
         speakButton.setOnAction(event -> speakBtn_go());
 
+        ggTranslate = new Button();
+        ggTranslate.setText("UseAPI");
+        ggTranslate.setOnAction(event -> {
+            try {
+                useAPIButton();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
         HBox input = new HBox(10);
-        addAWord=new Button();
+        addAWord = new Button();
         addAWord.setText("Add");
-        deleteAWord=new Button();
+        addAWord.setOnAction(event -> addAWord_Go());
+        deleteAWord = new Button();
         deleteAWord.setText("Delete");
-        input.getChildren().addAll(wordField, searchButton, speakButton,addAWord,deleteAWord);
+        deleteAWord.setOnAction(event -> deleteAWord_Go());
+        input.getChildren().addAll(wordField, searchButton, speakButton, addAWord, deleteAWord, ggTranslate);
 
         //Create meaning field
-
 
         meaningLabel = new Label("Meaning field");
         meaningLabel.setAlignment(Pos.CENTER);
@@ -100,7 +108,6 @@ public class DictionaryManagement extends Application {
         sp.setContent(meaningLabel);
 
         //Create recommendList
-
 
         observableList = FXCollections.observableList(wordList);
         System.out.println(observableList.size());
@@ -124,13 +131,14 @@ public class DictionaryManagement extends Application {
         mainPanel.getChildren().addAll(input, output);
 
         Scene scene = new Scene(mainPanel, 700, 440);
-        Stage stage = new Stage();
-        stage.setScene(scene);
-        stage.setTitle("Dictionary");
-        stage.show();
-        //-----------Gui is done-----------------//
-
-
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Dictionary");
+        primaryStage.setOnCloseRequest( e ->
+        {
+            e.consume();
+            btnClose_Click();
+        } );
+        primaryStage.show();
     }
 
     private void btn_Go() {
@@ -144,7 +152,7 @@ public class DictionaryManagement extends Application {
 
             } else {
                 List<String> youMeanList = new ArrayList<>();
-                meaningLabel.setText("Not found,maybe you wrote it wrong,see recommend list beside");
+                meaningLabel.setText("Not found,maybe you wrote it wrong,see recommend list beside or use API button");
                 String sdx = Soundex.soundex(s);
                 for (Word word : dictionary.getWords()) {
                     if (word.getWord().length() > 0)
@@ -171,4 +179,100 @@ public class DictionaryManagement extends Application {
         voice.speak(wordField.getText());
     }
 
+    private void useAPIButton() throws IOException {
+        String s = Translator.translate("en", "vi", wordField.getText());
+        meaningLabel.setText(s);
+    }
+
+    private void addAWord_Go() {
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle("Add a word");
+
+        Label inputWordLabel = new Label();
+        inputWordLabel.setText("Enter a word");
+
+        TextField inputWord = new TextField();
+        inputWord.setPromptText("Enter a word you want to add");
+
+        Label phonetic = new Label();
+        phonetic.setText("Phonetics");
+
+        TextField phoneticInput = new TextField();
+        phoneticInput.setPromptText("Enter the word's phonetic");
+
+        Label detailLabel = new Label();
+        detailLabel.setText("Detail");
+
+        TextArea wordDetail = new TextArea();
+
+        Button addConfirm = new Button();
+        addConfirm.setText("Add");
+
+        VBox addPane = new VBox();
+        addPane.getChildren().addAll(inputWordLabel, inputWord, phonetic, phoneticInput, detailLabel, wordDetail, addConfirm);
+
+        addConfirm.setOnAction(event -> {
+            String s = inputWord.getText();
+            int result = Collections.binarySearch(dictionary.getWords(), new Word(s));
+            if (result <= 0) {
+                StringBuilder s2 = new StringBuilder(wordDetail.getText());
+                String s3 = phoneticInput.getText();
+                Word newWord = new Word(s, new Meaning(s2), s3);
+                dictionary.getWords().add(newWord);
+                dictionary.sortWords();
+                MessageBox.show("Word added succesfully", "");
+            } else {
+                MessageBox.show("Word already exist", "");
+            }
+        });
+        Scene scene = new Scene(addPane, 300, 500);
+        stage.setScene(scene);
+        stage.setMinWidth(300);
+        stage.show();
+    }
+
+    private void deleteAWord_Go() {
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle("Delete A Word");
+        stage.setMinWidth(300);
+
+        TextField inputField = new TextField();
+        Label input = new Label();
+        input.setText("Enter A Word");
+        inputField.setPromptText("Enter A Word You Want To Delete");
+        Label output = new Label();
+        output.setText("Delete successfully");
+        Button confirm = new Button();
+        confirm.setText("Delete");
+        confirm.setOnAction(event -> {
+            String s = inputField.getText();
+            int result = Collections.binarySearch(dictionary.getWords(), new Word(s));
+            if (result > 0) {
+                dictionary.getWords().remove(result);
+                MessageBox.show("Delete successfully " + result, "");
+            } else {
+                MessageBox.show("This word is no longer in the dictionary", "");
+            }
+        });
+        HBox hBox = new HBox();
+        hBox.getChildren().addAll(confirm);
+        VBox vBox = new VBox();
+        vBox.getChildren().addAll(input, inputField, confirm);
+        Scene scene = new Scene(vBox, 300, 300);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    public void btnClose_Click() {
+        boolean confirm = false;
+        confirm = ConfirmationBox.show(
+                "Are you sure you want to quit?", "Confirmation",
+                "Yes", "No");
+        if (confirm)
+        {
+            stageTemp.close();
+        }
+    }
 }
